@@ -17,10 +17,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bedrock-artifact
-          path: artifact
+
+      - name: Extract artifact
+        run: |
+          mkdir -p artifact
+          tar -xzf bedrock-artifact.tar.gz -C artifact
+          rm bedrock-artifact.tar.gz
 
       - name: Sanity check artifact
         run: |
+          ls -la artifact/web/
           test -d artifact || (echo "artifact/ missing" && exit 1)
           test -f artifact/web/.htaccess || (echo "Missing artifact/web/.htaccess" && exit 1)
           test -f artifact/web/wp/wp-admin/install.php || (echo "Missing WordPress core in artifact/web/wp" && exit 1)
