@@ -25,13 +25,17 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: ~/.composer/cache/files
+          path: ~/.cache/composer
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
         run: composer install $COMPOSER_FLAGS
+
+      - name: Ensure composer cache dir exists
+        run: |
+          mkdir -p ~/.cache/composer
 
       - name: Prepare artifact
         run: |
