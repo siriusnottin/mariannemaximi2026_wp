@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.OVH_SFTP_PASSWORD }}
           port: ${{ secrets.OVH_SFTP_PORT }}    # usually 22
           uploads: |
-            ./artifact/ => ${{ secrets.OVH_REMOTE_WP_CURRENT }}/
+            ./artifact/* => ${{ secrets.OVH_REMOTE_WP_CURRENT }}/
           ignore: |
             .env
             web/app/uploads/
