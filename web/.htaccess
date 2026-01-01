@@ -1,7 +1,15 @@
-# Bedrock/WordPress front controller
+# Disable directory listing
+Options -Indexes
+Options +FollowSymLinks
+
 RewriteEngine On
 RewriteBase /wp/
+
+# Fix for OVH HTTPS
+SetEnvIf X-Forwarded-Proto https HTTPS=on
+
+# Standard Bedrock/WordPress front controller
 RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /wp/index.php [L]
+RewriteRule . index.php [L]
