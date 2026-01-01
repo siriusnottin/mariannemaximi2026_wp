@@ -50,7 +50,28 @@ jobs:
           # Ensure dotfiles that might be omitted by some runners or tools
           # are present in the artifact (explicit fallback for .htaccess)
           mkdir -p artifact/web
-          cp -f web/.htaccess artifact/web/.htaccess || true
+          if [ -f web/.htaccess ]; then
+            cp -f web/.htaccess artifact/web/.htaccess
+          else
+            echo "web/.htaccess not found, creating default"
+            cat > artifact/web/.htaccess << 'EOF'
+          # Disable directory listing
+          Options -Indexes
+          Options +FollowSymLinks
+
+          RewriteEngine On
+          RewriteBase /wp/
+
+          # Fix for OVH HTTPS
+          SetEnvIf X-Forwarded-Proto https HTTPS=on
+
+          # Standard Bedrock/WordPress front controller
+          RewriteRule ^index\.php$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . index.php [L]
+          EOF
+          fi
 
       - name: Verify Bedrock files
         run: |
