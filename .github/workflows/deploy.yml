@@ -1,0 +1,40 @@
+name: Deploy Bedrock to OVH (SFTP)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bedrock-artifact
+          path: artifact
+
+      - name: Sanity check artifact
+        run: |
+          test -d artifact || (echo "artifact/ missing" && exit 1)
+          test -f artifact/web/.htaccess || (echo "Missing artifact/web/.htaccess" && exit 1)
+          test -f artifact/web/wp/wp-admin/install.php || (echo "Missing WordPress core in artifact/web/wp" && exit 1)
+
+      - name: Deploy via SFTP (password auth)
+        uses: Dylan700/sftp-upload-action@v1.2.3
+        with:
+          server: ${{ secrets.OVH_SFTP_HOST }}
+          username: ${{ secrets.OVH_SFTP_USER }}
+          password: ${{ secrets.OVH_SFTP_PASSWORD }}
+          port: ${{ secrets.OVH_SFTP_PORT }}    # usually 22
+          uploads: |
+            ./artifact/ => ${{ secrets.OVH_REMOTE_WP_CURRENT }}/
+          ignore: |
+            .env
+            web/app/uploads/
+          delete: 'true'

@@ -1,0 +1,60 @@
+name: Build Bedrock (reusable)
+
+on:
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: Name of the uploaded artifact
+        value: ${{ jobs.build.outputs.artifact-name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: bedrock-artifact
+    env:
+      PHP_VERSION: "8.2"
+      COMPOSER_FLAGS: "--no-dev --prefer-dist --optimize-autoloader"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install $COMPOSER_FLAGS
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact
+          rsync -a --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "node_modules" \
+            --exclude ".env" \
+            --exclude "web/app/uploads" \
+            ./ artifact/
+          # Ensure dotfiles that might be omitted by some runners or tools
+          # are present in the artifact (explicit fallback for .htaccess)
+          mkdir -p artifact/web
+          cp -f web/.htaccess artifact/web/.htaccess || true
+
+      - name: Verify Bedrock files
+        run: |
+          test -f artifact/web/.htaccess || (echo "Missing artifact/web/.htaccess" && exit 1)
+          test -f artifact/web/wp/wp-admin/install.php || (echo "Missing WordPress core in artifact/web/wp" && exit 1)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-artifact
+          path: artifact/

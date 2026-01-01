@@ -1,0 +1,53 @@
+name: Sync wp-admin installs to Composer
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:11.3
+        env:
+          MYSQL_DATABASE: bedrock
+          MYSQL_USER: bedrock
+          MYSQL_PASSWORD: bedrock
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+      web:
+        image: your-dockerhub/bedrock-apache:latest
+        ports:
+          - 80:80
+        options: >-
+          --health-cmd="curl -fsS http://localhost || exit 1"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP & Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+
+      - name: Install Composer deps
+        run: composer install --no-interaction
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run sync script
+        run: bash scripts/sync-wp-to-composer.sh
+
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/sync-wp-to-composer
+          title: "chore: sync wp-admin plugins/themes into Composer"
+          commit-message: "Sync wp-admin installs to Composer"
+          body: "Generated composer requires from current wp-admin state."
