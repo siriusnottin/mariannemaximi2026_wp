@@ -40,13 +40,20 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir -p artifact
-          rsync -a --delete \
-            --exclude ".git" \
-            --exclude ".github" \
-            --exclude "node_modules" \
-            --exclude ".env" \
-            --exclude "web/app/uploads" \
-            ./ artifact/
+          # Use git archive to respect .gitignore and only include tracked files
+          git archive --format=tar HEAD | tar -x -C artifact/
+          
+          # Remove files we don't want in production (using .export-ignore logic manually if needed, 
+          # but git archive respects .gitattributes export-ignore if we set it up. 
+          # For now, we'll just remove the specific ones you mentioned if they are tracked)
+          rm -rf artifact/docker-compose.yml artifact/.docker artifact/wp-cli.yml artifact/pint.json artifact/scripts
+
+          # Add vendor directory (ignored by git but needed for prod)
+          cp -r vendor artifact/
+          
+          # Add web/wp directory (ignored by git but needed for prod)
+          cp -r web/wp artifact/web/
+
           # Ensure dotfiles that might be omitted by some runners or tools
           # are present in the artifact (explicit fallback for .htaccess)
           mkdir -p artifact/web
