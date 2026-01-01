@@ -31,16 +31,15 @@ jobs:
           test -f artifact/web/.htaccess || (echo "Missing artifact/web/.htaccess" && exit 1)
           test -f artifact/web/wp/wp-admin/install.php || (echo "Missing WordPress core in artifact/web/wp" && exit 1)
 
-      - name: Deploy via SFTP (password auth)
-        uses: Dylan700/sftp-upload-action@v1.2.3
-        with:
-          server: ${{ secrets.OVH_SFTP_HOST }}
-          username: ${{ secrets.OVH_SFTP_USER }}
-          password: ${{ secrets.OVH_SFTP_PASSWORD }}
-          port: ${{ secrets.OVH_SFTP_PORT }}    # usually 22
-          uploads: |
-            ./artifact/ => ${{ secrets.OVH_REMOTE_WP_CURRENT }}/
-          ignore: |
-            .env
-            web/app/uploads/
-          delete: 'false'
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Deploy via SFTP (lftp)
+        env:
+          SFTP_HOST: ${{ secrets.OVH_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.OVH_SFTP_USER }}
+          SFTP_PASS: ${{ secrets.OVH_SFTP_PASSWORD }}
+          SFTP_PORT: ${{ secrets.OVH_SFTP_PORT }}
+          REMOTE_DIR: ${{ secrets.OVH_REMOTE_WP_CURRENT }}
+        run: |
+          lftp -e "set sftp:auto-confirm yes; open sftp://$SFTP_USER:$SFTP_PASS@$SFTP_HOST:$SFTP_PORT; mirror -R --verbose --parallel=10 --exclude .env --exclude web/app/uploads/ artifact/ $REMOTE_DIR; bye"
