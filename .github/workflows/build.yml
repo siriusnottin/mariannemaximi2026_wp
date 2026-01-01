@@ -53,24 +53,8 @@ jobs:
           if [ -f web/.htaccess ]; then
             cp -f web/.htaccess artifact/web/.htaccess
           else
-            echo "web/.htaccess not found, creating default"
-            cat > artifact/web/.htaccess << 'EOF'
-          # Disable directory listing
-          Options -Indexes
-          Options +FollowSymLinks
-
-          RewriteEngine On
-          RewriteBase /wp/
-
-          # Fix for OVH HTTPS
-          SetEnvIf X-Forwarded-Proto https HTTPS=on
-
-          # Standard Bedrock/WordPress front controller
-          RewriteRule ^index\.php$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . index.php [L]
-          EOF
+            echo "web/.htaccess not found, failing build"
+            exit 1
           fi
 
       - name: Verify Bedrock files
