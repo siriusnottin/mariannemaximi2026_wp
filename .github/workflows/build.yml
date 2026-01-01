@@ -51,8 +51,10 @@ jobs:
           # Add vendor directory (ignored by git but needed for prod)
           cp -r vendor artifact/
           
-          # Add web/wp directory (ignored by git but needed for prod)
-          cp -r web/wp artifact/web/
+          # Add the fully built web directory (includes WP core, plugins, themes)
+          # We use rsync to merge with the git-archived web/ dir, ensuring we get
+          # both tracked files and composer-installed dependencies.
+          rsync -a web/ artifact/web/
 
           # Ensure dotfiles that might be omitted by some runners or tools
           # are present in the artifact (explicit fallback for .htaccess)
