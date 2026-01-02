@@ -1,6 +1,5 @@
 # Disable directory listing
 Options -Indexes
-Options +FollowSymLinks
 
 RewriteEngine On
 RewriteBase /wp/
