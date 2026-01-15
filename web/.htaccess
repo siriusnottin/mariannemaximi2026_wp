@@ -2,10 +2,15 @@
 Options -Indexes
 
 RewriteEngine On
-RewriteBase /wp/
+RewriteBase /
 
 # Fix for OVH HTTPS
 SetEnvIf X-Forwarded-Proto https HTTPS=on
+
+# Redirect to HTTPS when not using it (useful behind OVH proxy)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Standard Bedrock/WordPress front controller
 RewriteRule ^index\.php$ - [L]
